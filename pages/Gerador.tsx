@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wand2, Wallet, TrendingUp, PiggyBank, CreditCard, DollarSign, LayoutDashboard } from 'lucide-react';
+import { Wand2, Wallet, TrendingUp, PiggyBank, CreditCard, DollarSign, LayoutDashboard, AlertCircle } from 'lucide-react';
+import { GoogleGenAI, Type } from "@google/genai";
 import { FinancialTopic } from '../types';
 
 const Gerador: React.FC = () => {
@@ -17,17 +18,69 @@ const Gerador: React.FC = () => {
     { id: 'credito', label: 'Crédito Consciente', icon: <PiggyBank /> },
   ];
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!selectedTopic) return;
     
     setIsGenerating(true);
     
-    // Simulate AI generation delay
-    setTimeout(() => {
-      // In a real app, we would pass data via context or state management
-      // For this architecture demo, we'll use URL params or just navigate
-      navigate(`/resultado?topic=${selectedTopic}`);
-    }, 2000);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const topicLabel = topics.find(t => t.id === selectedTopic)?.label;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Crie um carrossel educativo para Instagram sobre o tema: "${topicLabel}".
+        
+        Público alvo: Iniciantes que querem melhorar sua vida financeira.
+        Tom de voz: Encorajador, direto e educativo.
+        
+        Gere EXATAMENTE 5 slides seguindo esta estrutura visual:
+        1. Capa: Título impactante (bg-secondary, text-white).
+        2. Conteúdo: Problema ou contexto (bg-white, text-slate-900).
+        3. Conteúdo: Solução ou Dica Prática (bg-white, text-slate-900).
+        4. Conteúdo: Benefício ou Exemplo (bg-white, text-slate-900).
+        5. Conclusão/CTA: Chamada para ação (bg-primary, text-white).
+        
+        Certifique-se que o conteúdo cabe visualmente em um post de redes sociais (texto curto e direto).`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING, description: "Título curto do slide" },
+                content: { type: Type.STRING, description: "Texto principal do slide (max 150 caracteres)" },
+                highlight: { type: Type.STRING, description: "Uma palavra ou frase curta de destaque (badge)" },
+                footer: { type: Type.STRING, description: "Rodapé (ex: @seu_perfil)" },
+                bgColor: { type: Type.STRING, enum: ["bg-secondary", "bg-white", "bg-primary"], description: "Classe Tailwind de cor de fundo" },
+                textColor: { type: Type.STRING, enum: ["text-white", "text-slate-900"], description: "Classe Tailwind de cor do texto" }
+              },
+              required: ["title", "content", "bgColor", "textColor"]
+            }
+          }
+        }
+      });
+
+      const generatedSlides = JSON.parse(response.text || "[]");
+      
+      if (generatedSlides.length > 0) {
+        navigate('/resultado', { 
+          state: { 
+            slides: generatedSlides, 
+            topic: selectedTopic 
+          } 
+        });
+      } else {
+        throw new Error("Nenhum slide gerado");
+      }
+
+    } catch (error) {
+      console.error("Erro ao gerar:", error);
+      alert("Ocorreu um erro ao gerar o carrossel. Por favor, tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -76,7 +129,7 @@ const Gerador: React.FC = () => {
             {isGenerating ? (
               <>
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Gerando Conteúdo...
+                Gerando Conteúdo com IA...
               </>
             ) : (
               <>
@@ -85,6 +138,13 @@ const Gerador: React.FC = () => {
               </>
             )}
           </button>
+        </div>
+        
+        <div className="mt-8 text-center">
+             <p className="text-xs text-slate-400 flex items-center justify-center gap-1">
+               <AlertCircle className="w-3 h-3" />
+               Powered by Google Gemini 2.5 Flash
+             </p>
         </div>
       </div>
     </div>

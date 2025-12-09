@@ -1,14 +1,18 @@
 import React from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { Download, Share2, ArrowLeft, Edit2 } from 'lucide-react';
 import { Slide } from '../types';
 
 const Resultado: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const topic = searchParams.get('topic') || 'investimentos';
+  const location = useLocation();
+  
+  const topicParam = searchParams.get('topic') || 'investimentos';
+  
+  // Tenta obter os slides gerados pela IA via state, ou usa mock como fallback
+  const slides: Slide[] = location.state?.slides || getMockSlides(topicParam);
 
-  // Mock data generation based on topic
-  const getMockSlides = (topic: string): Slide[] => {
+  function getMockSlides(topic: string): Slide[] {
     const commonFooter = "@financas.inteligentes";
     
     switch(topic) {
@@ -22,23 +26,21 @@ const Resultado: React.FC = () => {
         ];
       default:
         return [
-          { title: "Organize suas Finanças", content: "O passo a passo definitivo para sair do vermelho.", highlight: "Método 50/30/20", footer: commonFooter, bgColor: "bg-secondary", textColor: "text-white" },
-          { title: "50% Essenciais", content: "Metade da sua renda deve cobrir moradia, alimentação e transporte.", highlight: "Necessidade", footer: commonFooter, bgColor: "bg-white", textColor: "text-slate-900" },
-          { title: "30% Desejos", content: "Reserve uma parte para lazer e hobbies. Viver apenas para pagar contas não funciona.", highlight: "Equilíbrio", footer: commonFooter, bgColor: "bg-white", textColor: "text-slate-900" },
-          { title: "20% Futuro", content: "Este valor é sagrado. Invista para sua liberdade financeira.", highlight: "Prioridade", footer: commonFooter, bgColor: "bg-white", textColor: "text-slate-900" },
-          { title: "Comente 'PLANILHA'", content: "Que eu te envio uma ferramenta automática de controle.", highlight: "Ação", footer: commonFooter, bgColor: "bg-primary", textColor: "text-white" },
+          { title: "Exemplo Demo", content: "Este é um conteúdo de demonstração. Use o gerador para criar conteúdo real com IA.", highlight: "Demo", footer: commonFooter, bgColor: "bg-secondary", textColor: "text-white" },
+          { title: "Como Funciona", content: "Nossa IA analisa o tema escolhido e cria 5 slides otimizados para engajamento.", highlight: "Inteligência", footer: commonFooter, bgColor: "bg-white", textColor: "text-slate-900" },
+          { title: "Personalize", content: "Você pode editar cores, textos e elementos antes de baixar.", highlight: "Liberdade", footer: commonFooter, bgColor: "bg-white", textColor: "text-slate-900" },
+          { title: "Publique", content: "Baixe em alta qualidade e poste no Instagram, LinkedIn ou TikTok.", highlight: "Praticidade", footer: commonFooter, bgColor: "bg-white", textColor: "text-slate-900" },
+          { title: "Comece Agora", content: "Volte para a tela anterior e gere seu primeiro carrossel!", highlight: "Ação", footer: commonFooter, bgColor: "bg-primary", textColor: "text-white" },
         ];
     }
-  };
-
-  const slides = getMockSlides(topic);
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
         <Link to="/gerador" className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors">
           <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Voltar e Editar</span>
+          <span className="font-medium">Voltar e Gerar Novo</span>
         </Link>
         <div className="flex gap-3">
           <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium text-sm">
@@ -56,12 +58,12 @@ const Resultado: React.FC = () => {
         {slides.map((slide, index) => (
           <div 
             key={index}
-            className={`flex-shrink-0 w-[400px] h-[500px] ${slide.bgColor} ${slide.textColor} rounded-none shadow-2xl flex flex-col p-8 relative overflow-hidden`}
+            className={`flex-shrink-0 w-[400px] h-[500px] ${slide.bgColor} ${slide.textColor} rounded-none shadow-2xl flex flex-col p-8 relative overflow-hidden transition-transform hover:scale-[1.01] duration-300`}
           >
              {/* Slide Design Mockup */}
              <div className="flex-1 flex flex-col justify-center z-10">
                {slide.highlight && (
-                 <span className="inline-block px-3 py-1 bg-current/10 rounded-full text-xs font-bold tracking-widest uppercase mb-4 w-fit opacity-80">
+                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase mb-4 w-fit opacity-90 ${slide.textColor === 'text-white' ? 'bg-white/20' : 'bg-indigo-100 text-primary'}`}>
                    {slide.highlight}
                  </span>
                )}
@@ -74,7 +76,7 @@ const Resultado: React.FC = () => {
              </div>
              
              <div className="mt-auto pt-6 border-t border-current/10 flex justify-between items-center opacity-60 text-sm font-medium">
-               <span>{slide.footer}</span>
+               <span>{slide.footer || "@finsmart.studio"}</span>
                <span>{index + 1}/{slides.length}</span>
              </div>
 
